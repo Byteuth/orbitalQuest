@@ -2,7 +2,6 @@ import { OrbitControls } from "@react-three/drei";
 import Lights from "./Lights.jsx";
 import { Physics } from "@react-three/rapier";
 import { useState } from "react";
-import { useControls } from "leva";
 
 import { Level } from "./Level.jsx";
 import Performance from "./Utils/Performance.jsx";
@@ -14,17 +13,12 @@ export default function Experience() {
 	const blocksSeed = useGame((state) => state.blocksSeed);
 	const [physicsWireFrame, setPhysicsWireFrame] = useState(false);
 
-	useControls("Performance", {
-		PhysicsWireframe: {
-			value: physicsWireFrame,
-			onChange: (v) => setPhysicsWireFrame(v),
-		},
-	});
+
 	return (
 		<>
 		<color attach="background" args={['#bdedfc']} />
-			<Physics debug={physicsWireFrame}>
-				<Performance />
+			<Physics >
+				{/* <Performance /> */}
 				<OrbitControls makeDefault />
 				<Lights />
 				<Level trapCount={blocksCount} seed={blocksSeed}/>
