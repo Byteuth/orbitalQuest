@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { useRef, useState, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, Float, Text } from "@react-three/drei";
+import { MathUtils } from "three"; // Make sure to import MathUtils
 
 const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 const floor1Material = new THREE.MeshStandardMaterial({
@@ -39,7 +40,7 @@ export function BlockStart({ position = [0, 0, 0] }) {
 				geometry={boxGeometry}
 				material={floor1Material}
 				position={[0, -0.1, 0]}
-				scale={[4, 0.2, 4]}
+				scale={[20, 0.2, 200]}
 				receiveShadow
 			/>
 		</group>
@@ -119,6 +120,7 @@ export function BlockTrapSpinner({ position = [0, 0, 0] }) {
 					position={[0, 0.5, 0]}
 					scale={[3.5, 0.3, 0.3]}
 					castShadow
+					sides={THREE.DoubleSide}
 				/>
 			</RigidBody>
 		</group>
@@ -229,34 +231,88 @@ export function BlockTrapAxe({ position = [0, 0, 0] }) {
 	);
 }
 
+export function TestMovementBlock({ position = [0, 0, 0] }) {
+	const wallAmount = 10;
+	const areaLimit = 10;
+	const rotations = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+
+	const walls = useMemo(() => {
+		return Array.from({ length: wallAmount }, (_, i) => {
+			const randomPosition = [
+				MathUtils.randFloat(-areaLimit / 2, areaLimit / 2),
+				0.75,
+				MathUtils.randFloat(-areaLimit / 2, areaLimit / 2),
+			];
+
+			const randomRotation =
+				rotations[Math.floor(Math.random() * rotations.length)];
+			return (
+				<RigidBody key={i} type="fixed">
+					<mesh
+						position={randomPosition}
+						geometry={boxGeometry}
+						material={wallMaterial}
+						scale={[MathUtils.randFloat(0.3, 3), 1.5, 0.3]}
+						rotation={[0, randomRotation, 0]}
+						castShadow
+					/>
+				</RigidBody>
+			);
+		});
+	}, [wallAmount]);
+
+	return (
+		<group position={position}>
+			<RigidBody type="fixed">
+				<mesh
+					geometry={boxGeometry}
+					material={floor2Material}
+					position={[0, -0.1, 0]}
+					scale={[20, 0.2, 20]}
+					receiveShadow
+				/>
+			</RigidBody>
+			{walls}
+		</group>
+	);
+}
+
 function Bounds({ length = 1 }) {
 	return (
 		<>
 			<RigidBody type="fixed">
-				<mesh
-					position={[2.15, 0.75, -(length * 2) + 2]}
+				{/* <mesh
+					position={[10, 0.75, 0]}
 					geometry={boxGeometry}
 					material={wallMaterial}
-					scale={[0.3, 1.5, 4 * length]}
+					scale={[0.3, 1.5, 200]}
 					castShadow
-				/>
+				/> */}
 				<mesh
-					position={[-2.15, 0.75, -(length * 2) + 2]}
+					position={[-10, 0.75, 0]}
 					geometry={boxGeometry}
 					material={wallMaterial}
-					scale={[0.3, 1.5, 4 * length]}
+					scale={[0.3, 1.5, 20]}
 					receiveShadow
 				/>
 				<mesh
-					position={[0, 0.75, -(length * 4) + 2]}
+					position={[0, 0.75, -10]}
 					geometry={boxGeometry}
 					material={wallMaterial}
-					scale={[4, 1.5, 0.3]}
+					scale={[20, 1.5, 0.3]}
 					receiveShadow
 				/>
+				{/* <mesh
+					position={[0, 0.75, 10]}
+					geometry={boxGeometry}
+					material={wallMaterial}
+					scale={[20, 1.5, 0.3]}
+					receiveShadow
+				/> */}
+
 				<CuboidCollider
-					args={[2, 0.1, 2 * length]}
-					position={[0, -0.1, -(length * 2) + 2]}
+					args={[10, 0.1, 100]}
+					position={[0, -0.1, 0]}
 					restitution={0.2}
 					friction={1}
 				/>
@@ -265,7 +321,7 @@ function Bounds({ length = 1 }) {
 	);
 }
 
-export function Level({
+export default function Level({
 	trapCount,
 	types = [BlockTrapAxe, BlockTrapSpinner, BlockTrapUpDown],
 	seed,
@@ -281,11 +337,8 @@ export function Level({
 
 	return (
 		<>
-			<BlockStart position={[0, 0, 0]} />
-			{blocks.map((Block, index) => (
-				<Block key={index} position={[0, 0, -(index + 1) * 4]} />
-			))}
-			<BlockEnd position={[0, 0, -(trapCount + 1) * 4]} />
+			<TestMovementBlock position={[0, 0, 0]} />
+
 			<Bounds length={trapCount + 2} />
 		</>
 	);

@@ -37,7 +37,7 @@ export default function Interface() {
 
 	return (
 		<div className="interface">
-			<div ref={time} className="time"></div>
+			{/* <div ref={time} className="time"></div> */}
 			{phase === "ended" ? (
 				<div className="restart" onClick={restart}>
 					Restart
