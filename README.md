@@ -1,18 +1,21 @@
-# Marble Racing Game
+# 🌌 Orbital Quest 🚀
 
-Welcome to a small yet funny sample video game where you play as a marble, racing to the finish line while avoiding obstacles along the way. 
-This project is a learning exercise focusing heavily on **React**, **Three.js**, and **React Three Fiber**. - No mobile support atm
+Welcome to **Orbital Quest**, a 3D interactive space designed as a testing ground for third-person character and camera controllers often found in RPGs. The project's main focus is to create a **robust** and **flexible control system** that can easily be integrated into other applications. This journey dives deep into player controls and camera orientation across various states in 3D environments,
 
-## DEMO  -- https://marble-game-chi.vercel.app/
-![Screenshot from 2024-10-02 12-54-36](https://github.com/user-attachments/assets/36586b68-620f-489a-a10f-34064d7074d2)
+🌟 **Key Features:**
+- Dynamic character movement and physics.
+- RPG-style camera controls with smooth transitions.
+- Built with a focus on modularity and ease of integration.
 
+![Gameplay Preview](https://github.com/user-attachments/assets/45a30034-f7de-4a8a-a64d-73c5038dedc8)
 
-## Tech Stack
+## 🚀 Tech Stack
 - **React**
 - **Three.js**
 - **React Three Fiber (R3F)**
 - **Rapier Physics Engine**
-- **Zustand**
+- **Zustand** for state management
+
 
 ## How to Run the Project
 
