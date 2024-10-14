@@ -1,169 +1,108 @@
-import { useKeyboardControls } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
-import { CapsuleCollider, RigidBody, useRapier } from "@react-three/rapier";
-import { useControls } from "leva";
-import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
-
-import Character from "./Components/Character";
+import Ecctrl from "ecctrl";
+import { KeyboardControls } from "@react-three/drei";
 import useGame from "./Stores/useGame";
-
-const normalizeAngle = (angle) => {
-	while (angle > Math.PI) angle -= 2 * Math.PI;
-	while (angle < -Math.PI) angle += 2 * Math.PI;
-	return angle;
-};
-
-const lerpAngle = (start, end, t) => {
-	start = normalizeAngle(start);
-	end = normalizeAngle(end);
-
-	if (Math.abs(end - start) > Math.PI) {
-		if (end > start) {
-			start += 2 * Math.PI;
-		} else {
-			end += 2 * Math.PI;
-		}
-	}
-
-	return normalizeAngle(start + (end - start) * t);
-};
+import { useEffect, useRef, useState } from "react";
+import { useThree } from "@react-three/fiber";
+import * as THREE from "three";
+import CastSpell from "./Components/CastSpell";
 
 export default function CharacterController() {
-	const { WALK_SPEED, MAX_SPEED } = useControls("Character Control", {
-		WALK_SPEED: { value: 0.5 },
-		MAX_SPEED: { value: 1.5, min: 0.01, max: 5, step: 0.01 },
-	});
+	const keyboardMap = [
+		{ name: "forward", keys: ["ArrowUp", "KeyW"] },
+		{ name: "backward", keys: ["ArrowDown", "KeyS"] },
+		{ name: "leftward", keys: ["ArrowLeft", "KeyA"] },
+		{ name: "rightward", keys: ["ArrowRight", "KeyD"] },
+		{ name: "jump", keys: ["Space"] },
+		{ name: "run", keys: ["Shift"] },
+		{ name: "action1", keys: ["Digit1"] },
+		{ name: "action2", keys: ["Digit2"] },
+		{ name: "action3", keys: ["Digit3"] },
+		{ name: "action4", keys: ["Digit4"] },
+		{ name: "action5", keys: ["KeyF"] },
+	];
 
-	const rb = useRef();
-	const character = useRef();
-	const characterRotation = useGame((state) => state.characterRotation);
-	const updateCharacterPosition = useGame(
-		(state) => state.updateCharacterPosition
-	);
-	const { rapier, world } = useRapier();
+	const setKey = useGame((state) => state.setKey);
+	const spellDetails = useGame((state) => state.spellDetails);
+	const setSpellDetails = useGame((state) => state.setSpellDetails);
+	const characterRef = useRef();
+	const raycaster = new THREE.Raycaster();
+	const mouse = useRef(new THREE.Vector2());
+	const { camera, scene } = useThree();
+	const [spheres, setSpheres] = useState([]);
 
-	const [animation, setAnimation] = useState("idle");
-
-	const [state, get] = useKeyboardControls();
-	const jumpPressed = useRef(false);
-	const [leftMousePressed, setLeftMousePressed] = useState(false);
-	const [rightMousePressed, setRightMousePressed] = useState(false);
-
-	
-	useEffect(() => {
-		const handleMouseDown = (event) => {
-			if (event.button === 0) setLeftMousePressed(true); 
-			if (event.button === 2) setRightMousePressed(true); 
-		};
-
-		const handleMouseUp = (event) => {
-			if (event.button === 0) setLeftMousePressed(false); 
-			if (event.button === 2) setRightMousePressed(false); 
-		};
-
-		window.addEventListener("mousedown", handleMouseDown);
-		window.addEventListener("mouseup", handleMouseUp);
-
-		return () => {
-			window.removeEventListener("mousedown", handleMouseDown);
-			window.removeEventListener("mouseup", handleMouseUp);
-		};
-	}, []);
-
-	const jump = () => {
-		const origin = rb.current.translation();
-		origin.y -= 0.31;
-
-		const direction = { x: 0, y: -1, z: 0 };
-		const ray = new rapier.Ray(origin, direction);
-		const hit = world.castRay(ray, 10, true);
-		if (hit.timeOfImpact < 0.05) {
-			rb.current.applyImpulse({ x: 0, y: 0.05, z: 0 });
-			jumpPressed.current = false;
-		}
+	const handleAddSphere = (sphereMesh) => {
+		setSpheres((prev) => [...prev, sphereMesh]);
 	};
 
-	useFrame(({ camera }) => {
-		if (rb.current) {
-			const vel = rb.current.linvel();
-			const pos = rb.current.translation();
+	useEffect(() => {
+		const handleKeyDown = (e) => {
+			keyboardMap.forEach((action) => {
+				if (action.keys.includes(e.code)) {
+					setKey(action.name, true);
+					if (
+						["action1", "action2", "action3", "action4"].includes(action.name)
+					) {
+						raycaster.setFromCamera(mouse.current, camera);
+						const intersects = raycaster.intersectObjects(scene.children, true);
+						if (intersects.length > 0) {
+							const target = intersects[0].object;
+							if (target.userData && target.userData.isTargetable) {
+								const newSpellDetails = {
+									actionKeyName: action.name,
+									character: characterRef.current,
+									targetLocation: intersects[0].point,
+								};
+								setSpellDetails(newSpellDetails);
+							}
+						}
+					}
+				}
+			});
+		};
 
-			const forward = new THREE.Vector3(0, 0, 0.02).applyQuaternion(
-				character.current.quaternion
-			);
-			const leftward = new THREE.Vector3(0.01, 0, 0).applyQuaternion(
-				character.current.quaternion
-			);
-			const rightward = new THREE.Vector3(-0.01, 0, 0).applyQuaternion(
-				character.current.quaternion
-			);
-			const backward = new THREE.Vector3(0, 0, -0.01).applyQuaternion(
-				character.current.quaternion
-			);
-			const horizontalSpeed = new THREE.Vector2(vel.x, vel.z).length();
+		const handleMouseMove = (e) => {
+			mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+			mouse.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+		};
 
-			const forwardMovement =
-				get().forward || (leftMousePressed && rightMousePressed);
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("mousemove", handleMouseMove);
 
-			if (forwardMovement && horizontalSpeed < MAX_SPEED) {
-				const impulse = new THREE.Vector3(
-					forward.x,
-					0,
-					forward.z
-				).multiplyScalar(WALK_SPEED);
-				rb.current.applyImpulse(impulse, true);
-				setAnimation("walk");
-			}
-			if (get().left && horizontalSpeed < MAX_SPEED) {
-				const impulse = new THREE.Vector3(
-					leftward.x,
-					0,
-					leftward.z
-				).multiplyScalar(WALK_SPEED);
-				rb.current.applyImpulse(impulse, true);
-				setAnimation("walk");
-			}
-			if (get().right && horizontalSpeed < MAX_SPEED) {
-				const impulse = new THREE.Vector3(
-					rightward.x,
-					0,
-					rightward.z
-				).multiplyScalar(WALK_SPEED);
-				rb.current.applyImpulse(impulse, true);
-				setAnimation("walk");
-			}
-			if (get().backward && horizontalSpeed < MAX_SPEED) {
-				const impulse = new THREE.Vector3(
-					backward.x,
-					0,
-					backward.z
-				).multiplyScalar(WALK_SPEED);
-				rb.current.applyImpulse(impulse, true);
-				setAnimation("walk");
-			}
-			if (!forwardMovement && !get().left && !get().right && !get().backward) {
-				setAnimation("idle");
-			}
-
-			if (get().jump && !jumpPressed.current) {
-				jump();
-				jumpPressed.current = true;
-			}
-			if (!get().jump) {
-				jumpPressed.current = false;
-			}
-
-			updateCharacterPosition(pos);
-		}
-	});
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("mousemove", handleMouseMove);
+		};
+	}, [setKey, keyboardMap, camera, scene, setSpellDetails]);
 
 	return (
-		<RigidBody colliders={false} lockRotations ref={rb}>
-			<group ref={character} rotation={[0, characterRotation, 0]}>
-				<Character scale={0.18} position-y={-0.25} animation={animation} />
-			</group>
-			<CapsuleCollider args={[0.08, 0.15]} />
-		</RigidBody>
+		<>
+			<KeyboardControls map={keyboardMap}>
+				<Ecctrl
+					animated
+					camMoveSpeed={1.5}
+					camInitDis={-25}
+					camLowLimit={0}
+					camMaxDis={-50}
+					camZoomSpeed={5}
+					floatHeight={0.1}
+					disableFollowCam={false}
+					disableFollowCamPos={[0, 0, -10]}
+				>
+					<mesh ref={characterRef}>
+						<capsuleGeometry args={[0.3, 0.7, 5]} />
+						<meshStandardMaterial color="green" />
+					</mesh>
+				</Ecctrl>
+			</KeyboardControls>
+			{spellDetails && (
+				<CastSpell
+					actionKeyName={spellDetails.actionKeyName}
+					character={spellDetails.character}
+					targetLocation={spellDetails.targetLocation}
+					handleAddSphere={handleAddSphere}
+				/>
+			)}
+			{spheres.map((sphere) => sphere)}
+		</>
 	);
 }

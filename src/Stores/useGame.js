@@ -3,50 +3,32 @@ import { subscribeWithSelector } from "zustand/middleware";
 import * as THREE from "three";
 
 export default create(
-	subscribeWithSelector((set) => {
-		return {
-			blocksCount: 10,
-			characterPosition: { x: 0, y: 0, z: 0 },
-			characterRotation: 0,
-			phase: "ready",
-			startTime: 0,
-			endTime: 0,
+	subscribeWithSelector((set) => ({
+		keys: {
+			forward: false,
+			backward: false,
+			leftward: false,
+			rightward: false,
+			jump: false,
+			run: false,
+			action1: false,
+			action2: false,
+			action3: false,
+			action4: false,
+		},
+		spellDetails: null,
+		castingSpell: false,
 
-			start: () => {
-				set((state) => {
-					if (state.phase === "ready") {
-						return { phase: "playing", startTime: Date.now() };
-					}
-					return {};
-				});
-			},
-			restart: () => {
-				set((state) => {
-					if (state.phase === "playing" || state.phase === "ended") {
-						return { phase: "ready", blocksSeed: Math.random() };
-					}
-					return {};
-				});
-			},
-			end: () => {
-				set((state) => {
-					if (state.phase === "playing") {
-						return { phase: "ended", endTime: Date.now() };
-					}
-					return {};
-				});
-			},
+		// Setter for individual keys
+		setKey: (key, value) =>
+			set((state) => ({
+				keys: { ...state.keys, [key]: value },
+			})),
 
-			updateCharacterPosition: (newPosition) =>
-				set((state) => ({
-					characterPosition: {
-						x: newPosition.x,
-						y: newPosition.y,
-						z: newPosition.z,
-					},
-				})),
-			updateCharacterRotation: (rotation) =>
-				set({ characterRotation: rotation }),
-		};
-	})
+		// Setter for spell details
+		setSpellDetails: (spellDetails) =>
+			set((state) => ({
+				spellDetails: spellDetails,
+			})),
+	}))
 );

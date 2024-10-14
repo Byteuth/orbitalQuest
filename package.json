@@ -15,13 +15,14 @@
   "dependencies": {
     "@react-three/drei": "^9.108.1",
     "@react-three/fiber": "^8.16.8",
-    "@react-three/rapier": "1.4",
+    "@react-three/rapier": "^1.5.0",
+    "ecctrl": "^1.0.90",
     "leva": "^0.9.35",
     "r3f-perf": "^7.2.1",
     "react": "18.3",
     "react-dom": "18.3",
     "spectorjs": "^0.9.30",
-    "three": "^0.166.1",
+    "three": "^0.169.0",
     "zustand": "4.5"
   }
 }
