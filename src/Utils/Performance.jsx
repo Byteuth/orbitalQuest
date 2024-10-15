@@ -5,8 +5,8 @@ import { useState } from "react";
 export default function Performance() {
 	const [perfVisible, setPerfVisible] = useState(true);
 
-	useControls("Performance",{
-		PerfVisibility: {
+	useControls("Debug",{
+		perfDisplay: {
 			value: perfVisible,
 			onChange: (v) => setPerfVisible(v),
 		},
